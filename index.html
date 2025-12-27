@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YUZI STORE - All Game Top Up</title>
+<style>
+body {margin:0;font-family:Arial,sans-serif;background:#000;color:#fff;}
+.container {max-width:480px;margin:auto;padding:20px;}
+h1 {text-align:center;color:#ffd700;margin-bottom:20px;}
+input, select, button {width:100%;padding:10px;margin:5px 0;border-radius:5px;border:none;font-size:16px;}
+button {background:#ffd700;color:#000;font-weight:bold;cursor:pointer;transition:0.3s;}
+button:hover {opacity:0.9;}
+.transaction {border:1px solid #fff;padding:10px;margin:10px 0;border-radius:5px;background:#111;}
+.transaction p {margin:5px 0;}
+#paymentInfo {display:none;margin-top:10px;}
+a {color:#ffd700;text-decoration:none;}
+a:hover {text-decoration:underline;}
+.payment-admin {background:#222;color:#ffd700;padding:10px;margin:10px 0;border-radius:5px;text-align:center;}
+.transaction img {max-width:100%;border-radius:5px;margin-top:5px;cursor:pointer;}
+</style>
+</head>
+<body>
+<div class="container">
+    <h1>YUZI STORE - Top Up Game</h1>
+
+    <select id="game">
+        <option value="">-- Pilih Game --</option>
+        <option value="Free Fire">Free Fire</option>
+        <option value="Mobile Legends">Mobile Legends</option>
+        <option value="Clash of Clans">Clash of Clans</option>
+        <option value="Call of Duty">Call of Duty</option>
+        <option value="Super Sus">Super Sus</option>
+        <option value="Roblox">Roblox</option>
+        <option value="PUBG Mobile">PUBG Mobile</option>
+        <option value="E-Wallet">E-Wallet Top Up</option>
+    </select>
+
+    <input type="text" id="username" placeholder="Masukkan ID Game / E-Wallet">
+    <input type="text" id="region" placeholder="Masukkan Region / Provider">
+
+    <select id="package">
+        <option value="">-- Pilih Paket --</option>
+    </select>
+
+    <select id="payment">
+        <option value="">-- Pilih Metode Pembayaran --</option>
+        <option value="QR">QR</option>
+        <option value="Transfer">Transfer</option>
+        <option value="OVO">OVO</option>
+        <option value="DANA">DANA</option>
+        <option value="GoPay">GoPay</option>
+    </select>
+
+    <input type="file" id="buktiTransfer" accept="image/*">
+    <button onclick="processOrder()">Order Sekarang</button>
+
+    <div id="paymentInfo"></div>
+
+    <h2>Riwayat Transaksi</h2>
+    <div id="transactionList"></div>
+</div>
+
+<script>
+const adminNumber = "6285147769300";
+
+// Paket per game dari murah ke mahal
+const gamePackages = {
+    "Free Fire": ["50 Diamond - Rp 5.000","120 Diamond - Rp 12.000","240 Diamond - Rp 23.000","500 Diamond - Rp 45.000"],
+    "Mobile Legends": ["5 Diamond - Rp 5.000","12 Diamond - Rp 12.000","25 Diamond - Rp 23.000","50 Diamond - Rp 45.000"],
+    "Clash of Clans": ["500 Gems - Rp 10.000","1200 Gems - Rp 20.000","2500 Gems - Rp 40.000","5000 Gems - Rp 75.000"],
+    "Call of Duty": ["50 CP - Rp 10.000","100 CP - Rp 18.000","200 CP - Rp 35.000","500 CP - Rp 80.000"],
+    "Super Sus": ["50 Coins - Rp 5.000","120 Coins - Rp 12.000","250 Coins - Rp 25.000","500 Coins - Rp 50.000"],
+    "Roblox": ["50 Robux - Rp 10.000","120 Robux - Rp 23.000","250 Robux - Rp 45.000","500 Robux - Rp 90.000"],
+    "PUBG Mobile": ["60 UC - Rp 10.000","180 UC - Rp 30.000","300 UC - Rp 50.000","600 UC - Rp 95.000"],
+    "E-Wallet": ["Top Up 10.000","Top Up 25.000","Top Up 50.000","Top Up 100.000"]
+};
+
+// Update paket saat user pilih game
+document.getElementById('game').addEventListener('change', function(){
+    const game = this.value;
+    const packageSelect = document.getElementById('package');
+    packageSelect.innerHTML = '<option value="">-- Pilih Paket --</option>';
+    if(game && gamePackages[game]){
+        gamePackages[game].forEach(pkg=>{
+            const option = document.createElement('option');
+            option.value = pkg;
+            option.text = pkg;
+            packageSelect.appendChild(option);
+        });
+    }
+});
+
+// Load transaksi dari localStorage
+function loadTransactions(){
+    const transactions = JSON.parse(localStorage.getItem('transactions') || '[]');
+    const list = document.getElementById('transactionList');
+    list.innerHTML = '';
+    transactions.forEach((t,index)=>{
+        list.innerHTML += `<div class="transaction">
+            <p><b>${t.game}</b> | ID: ${t.user} | Region: ${t.region} | Paket: ${t.package}</p>
+            <p>Status: <span id="status${index}">${t.status}</span></p>
+            ${t.bukti ? `<img src="${t.bukti}" alt="Bukti Transfer" onclick="window.open('${t.bukti}','_blank')">` : ''}
+        </div>`;
+    });
+}
+
+// Simpan transaksi
+function saveTransaction(transaction){
+    try {
+        const transactions = JSON.parse(localStorage.getItem('transactions') || '[]');
+        transactions.push(transaction);
+        localStorage.setItem('transactions', JSON.stringify(transactions));
+        loadTransactions();
+    } catch(e){
+        console.error("Gagal menyimpan transaksi:", e);
+    }
+}
+
+// Update status transaksi
+function updateTransactionStatus(index,status){
+    try {
+        const transactions = JSON.parse(localStorage.getItem('transactions') || '[]');
+        if(transactions[index]){
+            transactions[index].status = status;
+            localStorage.setItem('transactions', JSON.stringify(transactions));
+            const statusEl = document.getElementById('status'+index);
+            if(statusEl) statusEl.innerText = status;
+        }
+    } catch(e){
+        console.error("Gagal update status:", e);
+    }
+}
+
+// Proses order
+function processOrder(){
+    const game = document.getElementById('game').value;
+    const user = document.getElementById('username').value.trim();
+    const region = document.getElementById('region').value.trim();
+    const packageSelected = document.getElementById('package').value;
+    const payment = document.getElementById('payment').value;
+    const buktiFile = document.getElementById('buktiTransfer').files[0];
+
+    if(!game || !user || !region || !packageSelected || !payment){
+        alert("Harap isi semua field sebelum memesan!");
+        return;
+    }
+
+    if(buktiFile){
+        const reader = new FileReader();
+        reader.onload = function(e){
+            createTransaction(game,user,region,packageSelected,payment,e.target.result);
+        }
+        reader.readAsDataURL(buktiFile);
+    } else {
+        createTransaction(game,user,region,packageSelected,payment,null);
+    }
+}
+
+// Buat transaksi baru
+function createTransaction(game,user,region,packageSelected,payment,bukti){
+    const transaction = {game,user,region,package:packageSelected,payment,status:"Menunggu Bayar",bukti,id:Date.now()};
+    saveTransaction(transaction);
+
+    // Text WA tanpa base64
+    let waText = `Order Baru:\nGame: ${game}\nID: ${user}\nRegion: ${region}\nPaket: ${packageSelected}\nMetode: ${payment}`;
+    let waLink = `https://wa.me/${adminNumber}?text=${encodeURIComponent(waText)}`;
+
+    // Info pembayaran
+    let info = `<div class="payment-admin"><b>Payment Admin:</b> ${adminNumber}</div>`;
+    info += `<p>Jika WhatsApp tidak otomatis terbuka, klik link berikut:</p>`;
+    info += `<p><a href="${waLink}" target="_blank">Konfirmasi Order ke Admin</a></p>`;
+
+    if(["QR","OVO","DANA","GoPay","Transfer"].includes(payment)){
+        info += `<p>Scan QR / Metode Pembayaran berikut:</p>`;
+        let paymentImage = {
+            "QR":"https://via.placeholder.com/150?text=QR",
+            "OVO":"https://via.placeholder.com/150?text=OVO",
+            "DANA":"https://via.placeholder.com/150?text=DANA",
+            "GoPay":"https://via.placeholder.com/150?text=GoPay",
+            "Transfer":"https://via.placeholder.com/150?text=Bank+Transfer"
+        }[payment];
+        info += `<img src="${paymentImage}" alt="${payment}" style="max-width:150px;border-radius:5px;">`;
+    }
+
+    if(bukti){
+        info += `<p>Bukti Transfer:</p><img src="${bukti}" alt="Bukti Transfer" style="max-width:150px;border-radius:5px;">`;
+    }
+
+    document.getElementById('paymentInfo').innerHTML = info;
+    document.getElementById('paymentInfo').style.display = 'block';
+
+    // Buka WA setelah info tampil
+    window.open(waLink, "_blank");
+
+    // Simulasi status otomatis
+    setTimeout(()=>{
+        const transactions = JSON.parse(localStorage.getItem('transactions') || '[]');
+        const index = transactions.findIndex(t => t.id === transaction.id);
+        if(index >= 0){
+            updateTransactionStatus(index,"Sedang Proses");
+            setTimeout(()=>{
+                updateTransactionStatus(index,"Selesai");
+            },10000);
+        }
+    },5000);
+}
+
+// Load transaksi awal
+loadTransactions();
+</script>
+</body>
+</html>
