@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YUZI Store - RGB Gaming</title>
+
+<style>
+@keyframes rgb {
+  0% {background-position: 0% 50%;}
+  50% {background-position: 100% 50%;}
+  100% {background-position: 0% 50%;}
+}
+body {
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  background: radial-gradient(circle at top, #020617, #000);
+  color: #fff;
+}
+.container {
+  max-width: 420px;
+  margin: auto;
+  padding: 20px;
+}
+h1 {
+  text-align: center;
+  font-size: 28px;
+  background: linear-gradient(270deg,#ff00ff,#00ffff,#00ff00,#ff0000);
+  background-size: 800% 800%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: rgb 6s ease infinite;
+}
+.card {
+  position: relative;
+  background: #020617;
+  padding: 15px;
+  border-radius: 15px;
+  margin-bottom: 18px;
+  box-shadow: 0 0 15px rgba(0,255,255,0.25);
+}
+.card::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 15px;
+  background: linear-gradient(270deg,#ff00ff,#00ffff,#00ff00,#ff0000);
+  background-size: 600% 600%;
+  animation: rgb 8s linear infinite;
+  z-index: -1;
+}
+label {
+  font-size: 13px;
+  margin-top: 10px;
+  display: block;
+  color: #94a3b8;
+}
+input, select {
+  width: 100%;
+  padding: 10px;
+  margin-top: 6px;
+  border-radius: 6px;
+  border: none;
+}
+button {
+  width: 100%;
+  margin-top: 14px;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  font-weight: bold;
+  cursor: pointer;
+  color: #000;
+  background: linear-gradient(270deg,#00ffff,#ff00ff,#00ff00,#ff0000);
+  background-size: 600% 600%;
+  animation: rgb 4s linear infinite;
+  box-shadow: 0 0 20px rgba(0,255,255,0.6);
+}
+.price {
+  margin-top: 10px;
+  font-weight: bold;
+  color: #22c55e;
+  text-shadow: 0 0 8px #22c55e;
+}
+.footer {
+  text-align: center;
+  font-size: 12px;
+  color: #94a3b8;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<h1>YUZI STORE</h1>
+
+<div class="card">
+
+<label>Game</label>
+<select id="game" onchange="updateNominal()">
+  <option value="FF">Free Fire</option>
+  <option value="ML">Mobile Legends</option>
+  <option value="PUBG">PUBG Mobile</option>
+</select>
+
+<label>User ID</label>
+<input id="userid" placeholder="Masukkan User ID">
+
+<label>Server (Opsional)</label>
+<input id="server" placeholder="1234">
+
+<label>Nominal</label>
+<select id="nominal" onchange="updateHarga()"></select>
+
+<div class="price" id="harga">Harga: -</div>
+
+<label>Metode Pembayaran</label>
+<select id="payment">
+  <option>DANA</option>
+  <option>GoPay</option>
+  <option>OVO</option>
+</select>
+
+<button onclick="playClick(); order()">ORDER SEKARANG</button>
+
+</div>
+
+<div class="footer">© 2025 YUZI Store • RGB Gaming Theme</div>
+
+</div>
+
+<audio id="clickSound">
+  <source src="https://assets.mixkit.co/sfx/preview/mixkit-arcade-game-jump-coin-216.wav">
+</audio>
+
+<script>
+/* KONFIG */
+const WA = "6285147769300";
+const EMAIL = "ayokmas32@gmail.com";
+
+/* DATA DEFAULT (JIKA ADMIN BELUM SET) */
+const defaultData = {
+  FF: {"70 Diamond":10000,"140 Diamond":20000,"355 Diamond":50000},
+  ML: {"86 Diamond":20000,"172 Diamond":38000,"257 Diamond":56000},
+  PUBG: {"60 UC":15000,"180 UC":45000,"600 UC":135000}
+};
+
+/* LOAD DATA ADMIN */
+const data = JSON.parse(localStorage.getItem("YUZI_DATA")) || defaultData;
+
+/* ELEMENT */
+const game = document.getElementById("game");
+const userid = document.getElementById("userid");
+const server = document.getElementById("server");
+const nominal = document.getElementById("nominal");
+const harga = document.getElementById("harga");
+const payment = document.getElementById("payment");
+
+/* AUDIO */
+function playClick(){
+  const s=document.getElementById("clickSound");
+  s.currentTime=0;
+  s.play().catch(()=>{});
+}
+
+/* UPDATE NOMINAL */
+function updateNominal(){
+  nominal.innerHTML="";
+  Object.keys(data[game.value]).forEach(n=>{
+    let o=document.createElement("option");
+    o.value=n;
+    o.textContent=n;
+    nominal.appendChild(o);
+  });
+  updateHarga();
+}
+
+/* UPDATE HARGA */
+function updateHarga(){
+  const h=data[game.value][nominal.value];
+  harga.textContent="Harga: Rp"+h.toLocaleString("id-ID");
+}
+
+/* ORDER */
+function order(){
+  if(userid.value.trim()==""){
+    alert("User ID wajib diisi!");
+    return;
+  }
+
+  const pesan=`ORDER YUZI STORE
+Game: ${game.options[game.selectedIndex].text}
+User ID: ${userid.value}
+Server: ${server.value||"-"}
+Nominal: ${nominal.value}
+${harga.textContent}
+Pembayaran: ${payment.value}`;
+
+  location.href="https://wa.me/"+WA+"?text="+encodeURIComponent(pesan);
+
+  setTimeout(()=>{
+    window.open(
+      "mailto:"+EMAIL+"?subject=Order YUZI Store&body="+encodeURIComponent(pesan)
+    );
+  },400);
+}
+
+/* INIT */
+updateNominal();
+</script>
+
+</body>
+</html>
